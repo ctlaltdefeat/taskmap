@@ -19,7 +19,7 @@ def mlog(graph):
 def run_task(graph, task, raise_errors=False):
     graph = tgraph.mark_as_in_progress(graph, task)
     args = get_task_args(graph, task)
-    log(graph).info('pid {}: starting task {}'.format(os.getpid(), task))
+    log(graph).debug('pid {}: starting task {}'.format(os.getpid(), task))
 
     try:
         result = graph.funcs[task](*args)
@@ -35,7 +35,7 @@ def run_task(graph, task, raise_errors=False):
 async def run_task_async(graph, task, raise_errors=False):
     graph = tgraph.mark_as_in_progress(graph, task)
     args = get_task_args(graph, task)
-    log(graph).info('pid {}: starting task {}'.format(os.getpid(), task))
+    log(graph).debug('pid {}: starting task {}'.format(os.getpid(), task))
 
     try:
         result = await asyncio.coroutine(graph.funcs[task])(*args)
@@ -49,7 +49,7 @@ async def run_task_async(graph, task, raise_errors=False):
 
 
 def task_success(graph, task, result):
-    log(graph).info('pid {}: finished task {}'.format(os.getpid(), task))
+    log(graph).debug('pid {}: finished task {}'.format(os.getpid(), task))
     graph.results[task] = result
     return tgraph.mark_as_done(graph, task)
 
@@ -179,7 +179,7 @@ def run_parallel_async(graph, nprocs=None, sleep=0.2, raise_errors=False):
         while not tgraph.all_done(graph):
             for task in tgraph.get_ready_tasks(graph):
                 graph = tgraph.mark_as_in_progress(graph, task)
-                mlog(graph).info(
+                mlog(graph).debug(
                     'pid {}: queueing task {}'.format(os.getpid(), task))
                 if task in graph.io_bound:
                     ioq.put(task)
@@ -211,14 +211,14 @@ async def scheduler(graph, sleep, ioq, cpuq, loop, raise_errors):
     while not tgraph.all_done(graph):
         try:
             task = ioq.get_nowait()
-            log(graph).info(
+            log(graph).debug(
                 'pid {}: dequeueing task {}'.format(os.getpid(), task))
             asyncio.ensure_future(
                 run_task_async(graph, task, raise_errors), loop=loop)
         except Exception:
             try:
                 task = cpuq.get_nowait()
-                log(graph).info(
+                log(graph).debug(
                     'pid {}: dequeueing task {}'.format(os.getpid(), task))
                 asyncio.ensure_future(
                     run_task_async(graph, task, raise_errors), loop=loop)
@@ -232,7 +232,7 @@ async def queue_loader(graph, ioq, cpuq, sleep):
     while not tgraph.all_done(graph):
         for task in tgraph.get_ready_tasks(graph):
             graph = tgraph.mark_as_in_progress(graph, task)
-            log(graph).info(
+            log(graph).debug(
                 'pid {}: queueing task {}'.format(os.getpid(), task))
 
             if task in graph.io_bound:
