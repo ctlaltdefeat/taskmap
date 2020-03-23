@@ -126,6 +126,18 @@ def run_async(graph, sleep=0.2, coro=None, raise_errors=False):
 
     return graph
 
+async def async_run_async(graph, sleep=0.2, coro=None, loop=None):
+    ioq = asyncio.Queue(len(graph.funcs.keys()))
+    cpuq = asyncio.Queue(len(graph.funcs.keys()))
+    # if not loop:
+    #     loop = asyncio.new_event_loop()
+    coros = asyncio.gather(
+        queue_loader(graph, ioq, cpuq, sleep),
+        scheduler(graph, sleep, ioq, cpuq, loop)
+    )
+    await coros
+    return graph
+
 
 def run_parallel_async(graph, nprocs=None, sleep=0.2, raise_errors=False):
     if nprocs == 1:
